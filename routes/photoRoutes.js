@@ -1,21 +1,36 @@
 const express = require('express');
-const multer = require('multer');
+const sharp = require('sharp');
 const Photo = require('../models/Photo');
+const multer = require('multer');
 
 const router = express.Router();
-const upload = multer(); // Multer middleware to handle file uploads
+
+// Multer setup for memory storage and file type filtering
+const storage = multer.memoryStorage();
+const fileFilter = (req, file, cb) => {
+  if (["image/jpeg", "image/png", "image/webp"].includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Unsupported file format!"), false);
+  }
+};
+
+const upload = multer({ storage, fileFilter });
 
 // Add a new photo
-const sharp = require('sharp');
-
 router.post('/add', upload.single('image'), async (req, res) => {
   try {
+    if (!req.file || !req.file.buffer || req.file.buffer.length === 0) {
+      return res.status(400).json({ message: 'Invalid image buffer or unsupported format!' });
+    }
+
     const { name } = req.body;
 
     // Resize and compress image using sharp
     const resizedImageBuffer = await sharp(req.file.buffer)
+      .toFormat("jpeg") // Ensure compatibility
       .resize({ width: 800 }) // Resize width to 800px (adjust as needed)
-      .jpeg({ quality: 70 })  // Compress JPEG quality to 70%
+      .jpeg({ quality: 70 }) // Compress JPEG quality to 70%
       .toBuffer();
 
     const photo = new Photo({
@@ -27,30 +42,30 @@ router.post('/add', upload.single('image'), async (req, res) => {
     await photo.save();
     res.status(201).json({ message: 'Photo added successfully!', photo });
   } catch (error) {
+    console.error('Error adding photo:', error);
     res.status(500).json({ message: 'Error adding photo', error });
   }
 });
-
 
 // Update a photo
 router.put('/update/:id', upload.single('image'), async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = {
-      name: req.body.name,
-      image: req.file ? req.file.buffer : undefined,
-      contentType: req.file ? req.file.mimetype : undefined
-    };
+    const updates = { name: req.body.name };
 
-    // Filter out undefined fields
-    const updatedData = Object.keys(updates)
-      .filter(key => updates[key] !== undefined)
-      .reduce((obj, key) => {
-        obj[key] = updates[key];
-        return obj;
-      }, {});
+    if (req.file && req.file.buffer && req.file.buffer.length > 0) {
+      // Process new image with sharp before saving
+      const resizedImageBuffer = await sharp(req.file.buffer)
+        .toFormat("jpeg") // Ensure format compatibility
+        .resize({ width: 800 }) // Resize width to 800px
+        .jpeg({ quality: 70 }) // Compress image quality to 70%
+        .toBuffer();
 
-    const updatedPhoto = await Photo.findByIdAndUpdate(id, updatedData, { new: true });
+      updates.image = resizedImageBuffer;
+      updates.contentType = 'image/jpeg';
+    }
+
+    const updatedPhoto = await Photo.findByIdAndUpdate(id, updates, { new: true });
 
     if (!updatedPhoto) {
       return res.status(404).json({ message: 'Photo not found!' });
@@ -58,6 +73,7 @@ router.put('/update/:id', upload.single('image'), async (req, res) => {
 
     res.status(200).json({ message: 'Photo updated successfully!', updatedPhoto });
   } catch (error) {
+    console.error('Error updating photo:', error);
     res.status(500).json({ message: 'Error updating photo', error });
   }
 });
@@ -75,6 +91,7 @@ router.delete('/delete/:id', async (req, res) => {
 
     res.status(200).json({ message: 'Photo deleted successfully!' });
   } catch (error) {
+    console.error('Error deleting photo:', error);
     res.status(500).json({ message: 'Error deleting photo', error });
   }
 });
@@ -99,7 +116,7 @@ router.get('/', async (req, res) => {
 
     res.json(formattedPhotos);
   } catch (err) {
-    console.error(err);
+    console.error('Error fetching photos:', err);
     res.status(500).json({ error: 'Error fetching photos' });
   }
 });
