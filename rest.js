@@ -29,7 +29,7 @@ app.listen(PORT, '0.0.0.0', () => {
 /** --- Middleware --- */
 app.use(
   cors({
-    origin: ['http://localhost:4200', 'https://pdj0ztmv-3000.inc1.devtunnels.ms'], // Allow frontend origin and dev tunnel
+    origin: ['http://localhost:4200', 'school-frontend-6x4m.onrender.com'], // Allow frontend origin and dev tunnel
     credentials: true, // Allow cookies/authentication headers
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // Allowed methods
     allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
