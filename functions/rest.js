@@ -1,3 +1,4 @@
+require("dotenv").config();
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -8,27 +9,30 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const session = require('express-session'); // For session handling
 const MongoStore = require('connect-mongo'); // For storing sessions in MongoDB
+const functions = require("firebase-functions");
+const mongoUri1 = functions.config().mongodb.uri;
 
 dotenv.config();
 const app = express();
 
 // Routes Import
-const photoRoutes = require('./routes/photoRoutes');
-const teacherRoutes = require('./routes/teacherRoutes');
-const noticeRoutes = require('./routes/NoticeRoutes');
-const attendanceRoutes = require('./routes/AttendenceRoutes');
-const studentRoutes = require('./routes/studentRoutes');
-const UserModel = require('./models/User'); // User model for authentication
-
+const photoRoutes = require('../routes/photoRoutes');
+const teacherRoutes = require('../routes/teacherRoutes');
+const noticeRoutes = require('../routes/NoticeRoutes');
+const attendanceRoutes = require('../routes/AttendenceRoutes');
+const studentRoutes = require('../routes/studentRoutes');
+const UserModel = require('../models/User'); // User model for authentication
+console.log(mongoUrl1);
 // Active Sessions Management
 let activeSessions = {}; // In-memory session tracking
+const PORT = 3000;
 
 
 /** --- Middleware --- */
 app.use(
   cors({
-    origin: ['http://localhost:4200', 'https://r18hk424-3000.inc1.devtunnels.ms/'], // Allow frontend origin and dev tunnel
-    credentials: false, // Allow cookies/authentication headers
+    origin: ['http://localhost:4200', 'https://fc9f-2409-40e3-1ec-74d0-286c-8069-36fa-1882.ngrok-free.app'], // Allow frontend origin and dev tunnel
+    credentials: true, // Allow cookies/authentication headers
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // Allowed methods
     allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
   })
@@ -209,4 +213,3 @@ app.use((req, res, next) => {
   next();
 });
 module.exports = app;
-

@@ -2,7 +2,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+const bcryptjs = require('bcryptjs');  
+
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -118,7 +119,7 @@ function checkInactiveSession(req, res, next) {
 // User Sign-Up
 app.post('/sign-up', async (req, res) => {
   try {
-    const hashedPassword = await bcrypt.hash(req.body.password, 10);
+    const hashedPassword = await bcryptjs.hash(req.body.password, 10);
     const user = new UserModel({
       username: req.body.username,
       password: hashedPassword,
@@ -153,7 +154,7 @@ app.post('/login', checkInactiveSession, async (req, res) => {
       return res.status(403).json({ message: 'User already logged in from another device.' });
     }
 
-    const isPasswordMatch = await bcrypt.compare(password, user.password);
+    const isPasswordMatch = await bcryptjs.compare(password, user.password);
     if (!isPasswordMatch) return res.status(401).json({ message: 'Incorrect password' });
 
     const token = jwt.sign({ username: user.username, userId: user._id, role: user.role }, jwtSecret, { expiresIn: '1h' });
