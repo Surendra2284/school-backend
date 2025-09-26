@@ -1,9 +1,7 @@
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-const bcryptjs = require('bcryptjs');  
-
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -23,13 +21,16 @@ const UserModel = require('./models/User'); // User model for authentication
 
 // Active Sessions Management
 let activeSessions = {}; // In-memory session tracking
-
+const PORT = 3000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running at http://0.0.0.0:${PORT}`);
+});
 
 /** --- Middleware --- */
 app.use(
   cors({
-    origin: ['http://localhost:4200', 'https://r18hk424-3000.inc1.devtunnels.ms/'], // Allow frontend origin and dev tunnel
-    credentials: false, // Allow cookies/authentication headers
+    origin: ['http://localhost:4200', 'https://pdj0ztmv-3000.inc1.devtunnels.ms'], // Allow frontend origin and dev tunnel
+    credentials: true, // Allow cookies/authentication headers
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // Allowed methods
     allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
   })
@@ -119,7 +120,7 @@ function checkInactiveSession(req, res, next) {
 // User Sign-Up
 app.post('/sign-up', async (req, res) => {
   try {
-    const hashedPassword = await bcryptjs.hash(req.body.password, 10);
+    const hashedPassword = await bcrypt.hash(req.body.password, 10);
     const user = new UserModel({
       username: req.body.username,
       password: hashedPassword,
@@ -154,7 +155,7 @@ app.post('/login', checkInactiveSession, async (req, res) => {
       return res.status(403).json({ message: 'User already logged in from another device.' });
     }
 
-    const isPasswordMatch = await bcryptjs.compare(password, user.password);
+    const isPasswordMatch = await bcrypt.compare(password, user.password);
     if (!isPasswordMatch) return res.status(401).json({ message: 'Incorrect password' });
 
     const token = jwt.sign({ username: user.username, userId: user._id, role: user.role }, jwtSecret, { expiresIn: '1h' });
@@ -210,4 +211,3 @@ app.use((req, res, next) => {
   next();
 });
 module.exports = app;
-
